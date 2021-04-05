@@ -1,0 +1,23 @@
+@import "~taro-ui/dist/style/index.scss"; // 引入组件样式，仅需引入一次即可
+
+.mid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.swiper {
+  .swiper-item {
+    .swiper-item-view {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%
+    }
+  }
+}
+
+.w100 {
+  width: 100%;
+}

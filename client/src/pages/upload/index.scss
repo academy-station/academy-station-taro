@@ -1,0 +1,13 @@
+.selectCheck {
+  border: 2px solid #967CE3;
+  display: flex
+}
+
+.desc{
+  font-size: small;
+  color: #eee;
+
+  .desc-row:before{
+    content: "•   ";
+  }
+}
