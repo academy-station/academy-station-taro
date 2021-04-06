@@ -1,16 +1,6 @@
 import { Button, View } from "@tarojs/components";
 import Taro from "@tarojs/taro";
-import React from "react";
-// import CompMe from "../pages/me";
-
-export const Colors = {
-  bg1: "#281167",
-  bg2: "#7496F0",
-  text1: "#281167",
-  text2: "#fff",
-};
-
-// const barMenus = ["个人中心", "获取优惠券"];
+import { Colors } from "../settings";
 
 export const LayoutBottom = () => {
   return (
@@ -19,8 +9,8 @@ export const LayoutBottom = () => {
         style={{
           width: "50%",
           borderRadius: 0,
-          background: Colors.bg2,
-          color: Colors.text1,
+          background: Colors.Blue,
+          color: Colors.White,
           fontWeight: "bold",
         }}
         onClick={() => {
@@ -36,8 +26,8 @@ export const LayoutBottom = () => {
         style={{
           width: "50%",
           borderRadius: 0,
-          background: Colors.bg2,
-          color: Colors.text1,
+          background: Colors.Blue,
+          color: Colors.White,
           fontWeight: "bold",
         }}
         onClick={() => {

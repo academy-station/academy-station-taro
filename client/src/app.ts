@@ -2,6 +2,10 @@ import { Component } from "react";
 import "./app.scss";
 import Taro from "@tarojs/taro";
 import { API } from "./ds";
+import moment from "moment";
+
+// 初始化日期格式
+// moment.locale("zh-CN");
 
 const funcLogIn = () => {
   Taro.login({
@@ -27,6 +31,19 @@ const funcLogIn = () => {
 
 class App extends Component {
   componentDidMount() {
+    Taro.cloud.init({
+      traceUser: true,
+    });
+
+    // 云登录
+    Taro.cloud
+      .callFunction({
+        name: "login",
+      })
+      .then((res) => {
+        console.log("调用云-登录", res);
+      });
+
     Taro.getStorage({
       key: "data",
       fail: () => {

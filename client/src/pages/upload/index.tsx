@@ -1,121 +1,140 @@
 import Taro from "@tarojs/taro";
 import LayoutBase from "../../layouts/base";
-import { Button, Checkbox, Input, View } from "@tarojs/components";
-import React, { useState } from "react";
+import { Button, Checkbox, View } from "@tarojs/components";
+import { useState } from "react";
 import "./index.scss";
-import {
-  API,
-  PaperItem,
-  PaperStatus,
-  PaperType,
-  UploadTempFile,
-  UserData,
-} from "../../ds";
+import { callPayProps, PaperStatus, UserData } from "../../ds";
+import { Colors } from "../../settings";
 
-interface CompCheckProps {
-  index: number;
-  selected: number;
-  setSelect: any;
-  line1: string;
-  surplus: number;
-  href?: any;
-}
-
-export const CompCheck = (props: CompCheckProps) => {
-  return (
-    <View
-      style={{
-        border: "2px solid #967CE3",
-        display: "flex",
-        alignItems: "center",
-        marginTop: "-2px",
-      }}
-    >
-      <Checkbox
-        value={"check"}
-        checked={props.index === props.selected}
-        style={{ margin: "5%" }}
-        onClick={() => {
-          props.setSelect(props.index);
-        }}
-      />
-      <View className={"selectContent"}>
-        <View>{props.line1}</View>
-        <View style={{ display: "inline-flex", fontSize: "small" }}>
-          余额：{props.surplus}，
-          <View style={{ color: "#F9DF70" }}>点击购买 →</View>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-export const Upload = () => {
+export const PageUpload = () => {
   const [paperType, setPaperType] = useState(0);
   const [paperName, setPaperName] = useState("");
+  const [paperCloudFileId, setPaperCloudFileId] = useState("");
+  const [paperTime, setPaperTime] = useState(0);
   const userData: UserData = Taro.getStorageSync("data");
-  const [email, setEmail] = useState("");
+  const openid = userData.openid;
+  const PayVals = [1, 29800];
+  const maxFileSize = 10; // 5 * 1024 * 1024 b
+  const ENABLE_PAYMENT = true;
 
   const handleUpload = () => {
     Taro.chooseMessageFile({
       count: 1,
-      fail: (res) => {
-        console.log({ res });
-      },
       success: (res) => {
-        Taro.showLoading();
+        Taro.showLoading({
+          title: "正在上传",
+        });
         const file = res.tempFiles[0];
-        const uploadFileData: UploadTempFile = {
-          file,
-          user_openid: userData.openid,
-        };
+        console.log("文件详情", file);
 
-        Taro.uploadFile({
-          url: API.API_PAPER_DOWNLOAD,
-          name: "file",
-          header: { "content-type": "multipart/form-data" },
+        // 检测文档类型
+        if (!(file.name.endsWith(".doc") || file.name.endsWith(".docx"))) {
+          return Taro.showToast({
+            title: "仅支持word文档",
+            icon: "error",
+          });
+        }
+
+        // 检测文档大小
+        if (file.size > maxFileSize * 1024 * 1024) {
+          return Taro.showToast({
+            title: `仅支持小于${maxFileSize}Mb文件`,
+            icon: "error",
+          });
+        }
+
+        // 上传文件
+        const paper_id = [openid, file.name].join("-");
+        Taro.cloud.uploadFile({
+          cloudPath: "paper/" + paper_id,
           filePath: file.path,
-          formData: {
-            data: JSON.stringify(uploadFileData),
-          }, // 重要，与后端解析保持一致：name, path, time, type, size
           success: (res) => {
             Taro.hideLoading();
-            console.log({ uploadResult: res });
-            setPaperName(file.name);
             Taro.showToast({
               title: "上传成功",
+              icon: "success",
             });
+            console.log("上传文件成功", res);
+            setPaperName(file.name);
+            setPaperCloudFileId(res.fileID);
+            setPaperTime(file.time);
           },
           fail: (res) => {
             Taro.hideLoading();
-            console.log({ res });
             Taro.showToast({
               title: "上传失败",
+              icon: "error",
             });
+            console.log("上传文件失败", res);
           },
         });
       },
     });
   };
 
-  // todo: 目前上传文件的api要最后使用submit进行确认，并且修改id算法
-  const handleSubmit = () => {
-    const paper: PaperItem = {
-      file_name: paperName,
-      id: "test",
-      time: "test",
-      user_openid: userData.openid,
+  const callPay = () => {
+    // 检测文件是否已上传
+    if (!paperName.length) {
+      return Taro.showToast({
+        title: "请先上传文件！",
+        icon: "error",
+      });
+    }
+    Taro.showLoading();
+
+    // 生成请求参数
+    const time = new Date().getTime();
+    const data: callPayProps = {
+      cloudFileId: paperCloudFileId,
+      paperName: paperName,
+      payId: [time, openid.substr(-5, 5)].join("-"),
+      payVal: PayVals[paperType],
+      openid: openid,
+      paperTime: paperTime,
       status: PaperStatus.Pending,
-      type: paperType ? PaperType.Fast : PaperType.Normal,
-      email: email,
+      submitTime: new Date().getTime(),
     };
-    console.log({ submit: paper });
-    Taro.navigateTo({
-      url: "/pages/me/index",
+
+    const db = Taro.cloud.database();
+    db.collection("paper").add({
+      data: data,
+      success: (res) => {
+        console.log("数据库插入完成", res);
+      },
+      fail: (res) => {
+        console.log("数据库插入失败", res);
+      },
     });
-    Taro.showToast({
-      title: "提交成功",
-    });
+
+    // 云支付
+    ENABLE_PAYMENT &&
+      Taro.cloud
+        .callFunction({
+          name: "pay",
+          data: data,
+        })
+        .then((res) => {
+          console.log("调用云-支付", res);
+          // @ts-ignore
+          const payment = res.result.payment;
+          console.log({ payment });
+          Taro.hideLoading();
+          Taro.requestPayment({
+            ...payment,
+            success: (res) => {
+              console.log("支付成功", res);
+              Taro.navigateTo({
+                url: "/pages/me/index",
+              });
+              Taro.showToast({
+                title: "支付成功",
+              });
+            },
+            fail: (res) => {
+              console.log("支付失败", res);
+            },
+          });
+        });
   };
 
   return (
@@ -123,20 +142,53 @@ export const Upload = () => {
       <View style={{ margin: "0 10%" }}>
         <View style={{ marginBottom: "20px" }}>
           <View style={{ marginBottom: "10px" }}>1. 选择查重服务</View>
-          <CompCheck
-            line1={"高速查重，3小时出报告"}
-            surplus={1}
-            index={0}
-            selected={paperType}
-            setSelect={setPaperType}
-          />
-          <CompCheck
-            line1={"标准查重，24小时出报告"}
-            surplus={0}
-            index={1}
-            selected={paperType}
-            setSelect={setPaperType}
-          />
+          <View
+            style={{
+              border: "2px solid #967CE3",
+              display: "flex",
+              alignItems: "center",
+              marginTop: "-2px",
+            }}
+          >
+            <Checkbox
+              value={"check"}
+              checked={paperType === 0}
+              style={{ margin: "5%" }}
+              onClick={() => {
+                setPaperType(0);
+              }}
+            />
+            <View className={"selectContent"}>
+              <View>
+                高速查重，
+                <text style={{ fontSize: "large", color: Colors.Blond }}>
+                  {"3 "}
+                </text>
+                小时出报告
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={{
+              border: "2px solid #967CE3",
+              display: "flex",
+              alignItems: "center",
+              marginTop: "-2px",
+            }}
+          >
+            <Checkbox
+              value={"check"}
+              checked={paperType === 1}
+              style={{ margin: "5%" }}
+              onClick={() => {
+                setPaperType(1);
+              }}
+            />
+            <View className={"selectContent"}>
+              <View>标准查重，24小时出报告</View>
+            </View>
+          </View>
         </View>
 
         <View style={{ marginBottom: "20px", width: "100%" }}>
@@ -168,7 +220,7 @@ export const Upload = () => {
             <View
               style={{
                 marginBottom: "10px",
-                color: "#F9DF70",
+                color: Colors.Blond,
                 textAlign: "center",
                 padding: "5px 0",
                 display: "block",
@@ -178,41 +230,17 @@ export const Upload = () => {
                 textOverflow: "ellipsis",
               }}
             >
-              成功上传：
+              已上传：
               {paperName}
             </View>
           )}
 
           <View className={"desc"}>
-            <View className={"desc-row"}>五万字以内Word文件，不支持PDF</View>
-            <View className={"desc-row"}>文件后缀名为.doc、.docx</View>
-          </View>
-        </View>
-
-        <View style={{ marginBottom: "20px" }}>
-          <View style={{ marginBottom: "10px" }}>3. 报告查收邮箱（必填）</View>
-          <View>
-            <View style={{ marginBottom: "10px" }}>
-              <Input
-                placeholder={"xxx@xx.com"}
-                style={{
-                  backgroundColor: "#fff",
-                  color: "#333",
-                  padding: "5px",
-                }}
-                value={email}
-                type={"text"}
-                onInput={(e) => {
-                  setEmail(e.detail.value);
-                }}
-              />
-            </View>
-
-            <View className={"desc"}>
-              <View className={"desc-row"}>
-                {" "}
-                请务必填写正确邮箱号，保证报告查收
-              </View>
+            <View className={"desc-row"}>文件后缀为 .doc、.docx</View>
+            <View className={"desc-row"}>
+              文件大小{" < "}
+              {maxFileSize} Mb
+              <View className={"desc-row"}>不支持PDF文档</View>
             </View>
           </View>
         </View>
@@ -221,9 +249,9 @@ export const Upload = () => {
           <View style={{ marginBottom: "10px" }}>
             <Button
               style={{ backgroundColor: "#7773EC", color: "#fff" }}
-              onClick={handleSubmit}
+              onClick={callPay}
             >
-              提交检测
+              确认提交
             </Button>
           </View>
           <View className={"desc"}>
@@ -238,4 +266,4 @@ export const Upload = () => {
   );
 };
 
-export default Upload;
+export default PageUpload;

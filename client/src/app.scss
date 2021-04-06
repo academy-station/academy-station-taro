@@ -21,3 +21,15 @@
 .w100 {
   width: 100%;
 }
+
+@mixin overflow($lines: 2){
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+}
+
+.overflow-2 {
+  @include overflow(2)
+}

@@ -1,6 +1,5 @@
 import { View } from "@tarojs/components";
 import { CompSwiper } from "../components/CompSwiper";
-import React from "react";
 import { Colors } from "../settings";
 
 export interface LayoutBaseProps {
@@ -13,8 +12,8 @@ export const LayoutBase = ({ children, bottom }: LayoutBaseProps) => {
     <View
       className="index"
       style={{
-        backgroundColor: Colors.bg1,
-        color: Colors.text2,
+        backgroundColor: Colors.PurpleDark1,
+        color: Colors.White,
         position: "relative",
         minHeight: "100vh",
       }}

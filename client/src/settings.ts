@@ -1,6 +1,7 @@
 export const Colors = {
-  bg1: "#281167",
-  bg2: "#7496F0",
-  text1: "#281167",
-  text2: "#fff",
+  Blue: "#7496F0",
+  PurpleDark1: "#281167",
+  PurpleDark2: "#281167",
+  White: "#fff",
+  Blond: "#F9DF70",
 };

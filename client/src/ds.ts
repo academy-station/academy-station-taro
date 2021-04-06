@@ -27,13 +27,25 @@ export enum PaperStatus {
 
 export interface PaperItem {
   id: string;
-  user_openid: string;
+  openid: string;
 
   file_name: string;
   time: number | string | Date;
   type: PaperType;
   status: PaperStatus;
   email?: string;
+}
+
+export interface callPayProps {
+  payVal: number;
+  payId: string;
+  // paperId: string;
+  cloudFileId: string;
+  paperName: string;
+  openid: string;
+  paperTime: number;
+  status: PaperStatus;
+  submitTime: number;
 }
 
 export interface UserData extends Taro.UserInfo {
