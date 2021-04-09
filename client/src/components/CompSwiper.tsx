@@ -1,6 +1,5 @@
 import { Image, Swiper, SwiperItem, View } from "@tarojs/components";
 import Banner from "../assets/imgs/raw/banner.jpg";
-import React from "react";
 
 export const CompSwiper = () => {
   return (
@@ -10,7 +9,7 @@ export const CompSwiper = () => {
       indicatorActiveColor="#333"
       vertical={false}
       circular
-      indicatorDots
+      indicatorDots={false}
       autoplay
     >
       <SwiperItem className="swiper-item">

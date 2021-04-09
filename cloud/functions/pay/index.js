@@ -6,14 +6,16 @@ const subMchId = "1606844230";
 
 // 云函数入口函数
 exports.main = async (event, context) => {
-  const res = await cloud.cloudPay.unifiedOrder({
-    body: "body",
+  console.log({ event });
+
+  return cloud.cloudPay.unifiedOrder({
+    body: "论文查重申请",  // 商品描述
+    detail: event.billVal > 300 ? "高速查重" : "标准查重",
     spbillCreateIp: "127.0.0.1",
     subMchId: subMchId,
-    totalFee: event.payVal,
-    outTradeNo: event.payId,
+    outTradeNo: event.billId,
+    totalFee: event.billVal,
     envId: "cloud1",
     functionName: "pay_cb",
   });
-  return res;
 };

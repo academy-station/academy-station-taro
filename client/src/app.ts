@@ -1,67 +1,18 @@
 import { Component } from "react";
 import "./app.scss";
 import Taro from "@tarojs/taro";
-import { API } from "./ds";
-import moment from "moment";
-
-// 初始化日期格式
-// moment.locale("zh-CN");
-
-const funcLogIn = () => {
-  Taro.login({
-    success: (resLogin) => {
-      Taro.getUserInfo({
-        success: (res) => {
-          let userData = res.userInfo;
-          Taro.request({
-            url: API.API_USER_LOGIN,
-            data: { js_code: resLogin.code },
-            success: (resLoginBackend) => {
-              userData = { ...userData, ...resLoginBackend.data };
-              console.log({ userData });
-              Taro.setStorageSync("data", userData);
-              console.log("Successfully set userData into local storage");
-            },
-          });
-        },
-      });
-    },
-  });
-};
+import loadUserData from "./functions/loadUserData";
 
 class App extends Component {
-  componentDidMount() {
-    Taro.cloud.init({
-      traceUser: true,
-    });
+  async onLaunch() {}
 
-    // 云登录
-    Taro.cloud
-      .callFunction({
-        name: "login",
-      })
-      .then((res) => {
-        console.log("调用云-登录", res);
-      });
+  async componentDidShow() {
+    console.log("======  Load  ======");
+    // 云初始化，必须步骤，程序运行期间只需运行一次
+    Taro.cloud.init({ traceUser: true });
 
-    Taro.getStorage({
-      key: "data",
-      fail: () => {
-        console.log("Not found key of data in local storage.");
-        console.log("try logging...");
-        funcLogIn();
-      },
-      success: (res) => {
-        console.log("Found key of data in local storage.");
-        console.log(res.data);
-      },
-      complete: () => {
-        console.log("初始化用户数据完成");
-      },
-    });
+    await loadUserData();
   }
-
-  componentDidShow() {}
 
   componentDidHide() {}
 

@@ -1,11 +1,11 @@
 {
   "miniprogramRoot": "client/dist/",
   "cloudfunctionRoot": "cloud/functions/",
-  "projectname": "taro_academy_station",
+  "projectname": "academy-station-taro",
   "description": "学术小站-查重小程序",
   "appid": "wx9de26bbb01981e49",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": false,
     "enhance": false,
     "postcss": false,
@@ -41,5 +41,6 @@
     "minifyWXSS": true
   },
   "compileType": "miniprogram",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate",
   "condition": {}
 }

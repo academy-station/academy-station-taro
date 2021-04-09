@@ -1,4 +1,4 @@
-import { View } from "@tarojs/components";
+import { OfficialAccount, View } from "@tarojs/components";
 import { CompSwiper } from "../components/CompSwiper";
 import { Colors } from "../settings";
 
@@ -23,6 +23,14 @@ export const LayoutBase = ({ children, bottom }: LayoutBaseProps) => {
         {children}
       </View>
       {bottom}
+
+      <View>
+        <OfficialAccount
+          onLoad={(e) => {
+            console.log("OfficialAccount", e);
+          }}
+        />
+      </View>
     </View>
   );
 };
